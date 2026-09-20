@@ -21,6 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.inspection.backend.model.InspectionRecord;
 import com.inspection.backend.service.DuplicateInspectionService;
+import com.inspection.backend.service.EmailService;
 import com.inspection.backend.service.ExcelService;
 import com.inspection.backend.service.PdfReportService;
 import com.inspection.backend.service.InspectionRecordService;
@@ -37,6 +38,7 @@ public class ReportController {
     private final ReportCalculationService reportService;
     private final PdfReportService pdfReportService;
     private final InspectionRecordService inspectionRecordService;
+    private final EmailService emailService;
 
     public ReportController(
             ExcelService excelService,
@@ -44,7 +46,8 @@ public class ReportController {
             DuplicateInspectionService duplicateService,
             ReportCalculationService reportService,
             PdfReportService pdfReportService,
-            InspectionRecordService inspectionRecordService) {
+            InspectionRecordService inspectionRecordService,
+            EmailService emailService) {
 
         this.excelService = excelService;
         this.validationService = validationService;
@@ -52,6 +55,7 @@ public class ReportController {
         this.reportService = reportService;
         this.pdfReportService = pdfReportService;
         this.inspectionRecordService = inspectionRecordService;
+        this.emailService = emailService;
     }
 
 
@@ -130,6 +134,10 @@ public class ReportController {
 
             byte[] pdf =
                     pdfReportService.generateReport(report);
+
+            emailService.sendReportEmail(
+                    pdf,
+                    "Inspection-Report.pdf");
 
             HttpHeaders headers = new HttpHeaders();
 
@@ -262,6 +270,10 @@ public class ReportController {
 
             byte[] pdf =
                     pdfReportService.generateReport(report);
+
+            emailService.sendReportEmail(
+                    pdf,
+                    "Inspection-Report.pdf");
 
             HttpHeaders headers =
                     new HttpHeaders();

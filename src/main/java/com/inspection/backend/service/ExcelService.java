@@ -38,7 +38,7 @@ public class ExcelService {
             "Inspection status(OK/NG)",
             "Defect Description(If NG)",
             "Defect Photo",
-            "Packaging status",
+            "Packaging status(OK/NG)",
             "Packaging Photo",
             "Checked by",
             "Checked By",

@@ -11,6 +11,7 @@ import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -50,6 +51,92 @@ public class ReportController {
         this.reportService = reportService;
         this.pdfReportService = pdfReportService;
         this.inspectionRecordService = inspectionRecordService;
+    }
+
+
+
+    @GetMapping("/current")
+    public ResponseEntity<?> getCurrentReport() {
+
+        try {
+
+            List<InspectionRecord> records =
+                    inspectionRecordService.getAllAsInspectionRecords();
+
+            if (records.isEmpty()) {
+                return ResponseEntity.ok(
+                        java.util.Map.of(
+                                "reportGenerationAllowed", false,
+                                "message", "No inspection records found."));
+            }
+
+            Map<String, Object> report =
+                    reportService.calculate(records);
+
+            report.put("reportGenerationAllowed", true);
+            report.put(
+                    "reportType",
+                    "Receiving Inspection Report");
+            report.put(
+                    "generatedAt",
+                    LocalDateTime.now().format(
+                            DateTimeFormatter.ofPattern(
+                                    "dd-MM-yyyy HH:mm")));
+
+            return ResponseEntity.ok(report);
+
+        } catch (Exception e) {
+
+            return ResponseEntity.internalServerError()
+                    .body("Unable to load report from MySQL: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/pdf/current")
+    public ResponseEntity<?> generateCurrentPdf() {
+
+        try {
+
+            List<InspectionRecord> records =
+                    inspectionRecordService.getAllAsInspectionRecords();
+
+            if (records.isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body("No inspection records found.");
+            }
+
+            Map<String, Object> report =
+                    reportService.calculate(records);
+
+            report.put(
+                    "reportType",
+                    "Receiving Inspection Report");
+            report.put(
+                    "generatedAt",
+                    LocalDateTime.now().format(
+                            DateTimeFormatter.ofPattern(
+                                    "dd-MM-yyyy HH:mm")));
+
+            byte[] pdf =
+                    pdfReportService.generateReport(report);
+
+            HttpHeaders headers = new HttpHeaders();
+
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.setContentDisposition(
+                    ContentDisposition.attachment()
+                            .filename("Inspection-Report.pdf")
+                            .build());
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(pdf);
+
+        } catch (Exception e) {
+
+            return ResponseEntity.internalServerError()
+                    .body("PDF generation failed: " + e.getMessage());
+        }
     }
 
     @PostMapping("/calculate")

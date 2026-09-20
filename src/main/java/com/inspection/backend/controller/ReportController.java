@@ -273,9 +273,14 @@ public class ReportController {
         Map<String, Object> response =
                 new LinkedHashMap<>();
 
+        boolean reportAllowed =
+                !validRecords.isEmpty()
+                && validationWarnings.isEmpty()
+                && duplicateWarnings.isEmpty();
+
         response.put(
                 "reportGenerationAllowed",
-                !validRecords.isEmpty());
+                reportAllowed);
 
         response.put(
                 "totalRecords",
@@ -301,7 +306,7 @@ public class ReportController {
                 "validationWarnings",
                 validationWarnings);
 
-        if (!validRecords.isEmpty()) {
+        if (reportAllowed) {
 
             inspectionRecordService.saveAll(validRecords);
 

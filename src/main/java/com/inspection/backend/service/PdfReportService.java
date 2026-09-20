@@ -687,7 +687,7 @@ public class PdfReportService {
                 String value,
                 PDType1Font font,
                 float size,
-                float maxWidth) {
+                float maxWidth) throws IOException {
 
             if (value == null || value.isBlank()) {
                 return new String[] { "" };

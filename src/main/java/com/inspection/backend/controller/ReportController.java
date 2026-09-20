@@ -193,7 +193,8 @@ public class ReportController {
             if (!selectedModel.isEmpty()
                     && !selectedModel.equalsIgnoreCase(
                             record.getModel() == null
-                                    ? ""
+                                    || record.getModel().trim().isEmpty()
+                                    ? "UNKNOWN"
                                     : record.getModel().trim())) {
                 continue;
             }

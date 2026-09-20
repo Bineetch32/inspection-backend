@@ -24,15 +24,42 @@ public class ExcelService {
 
     private static final int HEADER_ROW = 1;
 
+    private static final String[] EXPECTED_HEADERS = {
+            "SR No.",
+            "Inspection Date",
+            "Part No",
+            "Part Name",
+            "Vendor code",
+            "Vendor Name",
+            "Model",
+            "Quantity checked",
+            "OK Quantity",
+            "NG Quantity",
+            "Inspection status(OK/NG)",
+            "Defect Description(If NG)",
+            "Defect Photo",
+            "Packaging status",
+            "Packaging Photo",
+            "Checked by",
+            "Checked By",
+            "Remarks"
+    };
+
     public List<InspectionRecord> readInspectionData(
             MultipartFile file) throws IOException {
 
         List<InspectionRecord> records = new ArrayList<>();
 
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("Please upload an Excel file.");
+        }
+
         try (InputStream inputStream = file.getInputStream();
              Workbook workbook = WorkbookFactory.create(inputStream)) {
 
             DataFormatter formatter = new DataFormatter();
+
+            boolean inspectionSheetFound = false;
 
             for (Sheet sheet : workbook) {
 
@@ -40,6 +67,10 @@ public class ExcelService {
                         sheet.getSheetName())) {
                     continue;
                 }
+
+                inspectionSheetFound = true;
+
+                validateHeaders(sheet, formatter);
 
                 for (int rowIndex = HEADER_ROW + 1;
                      rowIndex <= sheet.getLastRowNum();
@@ -109,7 +140,6 @@ public class ExcelService {
                     record.setRemarks(
                             getString(row, 17, formatter));
 
-                    // Source information
                     record.setSheetName(
                             sheet.getSheetName());
 
@@ -119,9 +149,54 @@ public class ExcelService {
                     records.add(record);
                 }
             }
+
+            if (!inspectionSheetFound) {
+                throw new IllegalArgumentException(
+                        "Invalid inspection Excel: no inspection data sheet was found.");
+            }
+
+            if (records.isEmpty()) {
+                throw new IllegalArgumentException(
+                        "Invalid inspection Excel: no inspection records were found.");
+            }
         }
 
         return records;
+    }
+
+    private void validateHeaders(
+            Sheet sheet,
+            DataFormatter formatter) {
+
+        Row headerRow = sheet.getRow(HEADER_ROW);
+
+        if (headerRow == null) {
+            throw new IllegalArgumentException(
+                    "Invalid inspection Excel: headers are missing in sheet '"
+                    + sheet.getSheetName() + "'.");
+        }
+
+        for (int i = 0; i < EXPECTED_HEADERS.length; i++) {
+
+            String actual = formatter.formatCellValue(
+                    headerRow.getCell(i));
+
+            String expected = EXPECTED_HEADERS[i];
+
+            if (!normalize(actual).equals(normalize(expected))) {
+
+                throw new IllegalArgumentException(
+                        "Invalid inspection Excel format in sheet '"
+                        + sheet.getSheetName()
+                        + "'. Expected column '"
+                        + expected
+                        + "' at position "
+                        + (i + 1)
+                        + " but found '"
+                        + actual
+                        + "'.");
+            }
+        }
     }
 
     private String getString(
@@ -155,11 +230,8 @@ public class ExcelService {
         }
 
         try {
-
             return Integer.valueOf(value);
-
         } catch (NumberFormatException e) {
-
             throw new IllegalArgumentException(
                     "Invalid number at row "
                     + (row.getRowNum() + 1)
@@ -228,5 +300,20 @@ public class ExcelService {
         }
 
         return true;
+    }
+
+    private String normalize(String value) {
+
+        if (value == null) {
+            return "";
+        }
+
+        return value
+                .replace('\u00A0', ' ')
+                .replace("\u200B", "")
+                .replace("\uFEFF", "")
+                .replaceAll("[\\p{Z}\\s]+", " ")
+                .trim()
+                .toLowerCase();
     }
 }

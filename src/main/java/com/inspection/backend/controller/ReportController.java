@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -56,34 +57,41 @@ public class ReportController {
 
 
     @GetMapping("/current")
-    public ResponseEntity<?> getCurrentReport() {
+    public ResponseEntity<?> getCurrentReport(
+            @RequestParam(required = false) String fromDate,
+            @RequestParam(required = false) String toDate,
+            @RequestParam(required = false) String model) {
 
         try {
 
             List<InspectionRecord> records =
-                    inspectionRecordService.getAllAsInspectionRecords();
+                    filterRecords(
+                            inspectionRecordService.getAllAsInspectionRecords(),
+                            fromDate,
+                            toDate,
+                            model);
 
             if (records.isEmpty()) {
                 return ResponseEntity.ok(
                         java.util.Map.of(
                                 "reportGenerationAllowed", false,
-                                "message", "No inspection records found."));
+                                "message", "No inspection records found for selected filters."));
             }
 
             Map<String, Object> report =
                     reportService.calculate(records);
 
             report.put("reportGenerationAllowed", true);
-            report.put(
-                    "reportType",
-                    "Receiving Inspection Report");
-            report.put(
-                    "generatedAt",
+            report.put("reportType", "Receiving Inspection Report");
+            report.put("generatedAt",
                     LocalDateTime.now().format(
-                            DateTimeFormatter.ofPattern(
-                                    "dd-MM-yyyy HH:mm")));
+                            DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm")));
 
             return ResponseEntity.ok(report);
+
+        } catch (IllegalArgumentException e) {
+
+            return ResponseEntity.badRequest().body(e.getMessage());
 
         } catch (Exception e) {
 
@@ -93,29 +101,32 @@ public class ReportController {
     }
 
     @GetMapping("/pdf/current")
-    public ResponseEntity<?> generateCurrentPdf() {
+    public ResponseEntity<?> generateCurrentPdf(
+            @RequestParam(required = false) String fromDate,
+            @RequestParam(required = false) String toDate,
+            @RequestParam(required = false) String model) {
 
         try {
 
             List<InspectionRecord> records =
-                    inspectionRecordService.getAllAsInspectionRecords();
+                    filterRecords(
+                            inspectionRecordService.getAllAsInspectionRecords(),
+                            fromDate,
+                            toDate,
+                            model);
 
             if (records.isEmpty()) {
                 return ResponseEntity.badRequest()
-                        .body("No inspection records found.");
+                        .body("No inspection records found for selected filters.");
             }
 
             Map<String, Object> report =
                     reportService.calculate(records);
 
-            report.put(
-                    "reportType",
-                    "Receiving Inspection Report");
-            report.put(
-                    "generatedAt",
+            report.put("reportType", "Receiving Inspection Report");
+            report.put("generatedAt",
                     LocalDateTime.now().format(
-                            DateTimeFormatter.ofPattern(
-                                    "dd-MM-yyyy HH:mm")));
+                            DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm")));
 
             byte[] pdf =
                     pdfReportService.generateReport(report);
@@ -132,10 +143,78 @@ public class ReportController {
                     .headers(headers)
                     .body(pdf);
 
+        } catch (IllegalArgumentException e) {
+
+            return ResponseEntity.badRequest().body(e.getMessage());
+
         } catch (Exception e) {
 
             return ResponseEntity.internalServerError()
                     .body("PDF generation failed: " + e.getMessage());
+        }
+    }
+
+    private List<InspectionRecord> filterRecords(
+            List<InspectionRecord> records,
+            String fromDateText,
+            String toDateText,
+            String model) {
+
+        LocalDate fromDate = parseDate(fromDateText);
+        LocalDate toDate = parseDate(toDateText);
+
+        if (fromDate != null && toDate != null
+                && fromDate.isAfter(toDate)) {
+
+            throw new IllegalArgumentException(
+                    "From Date cannot be after To Date.");
+        }
+
+        String selectedModel =
+                model == null ? "" : model.trim();
+
+        List<InspectionRecord> result =
+                new ArrayList<>();
+
+        for (InspectionRecord record : records) {
+
+            LocalDate date = record.getInspectionDate();
+
+            if (fromDate != null
+                    && (date == null || date.isBefore(fromDate))) {
+                continue;
+            }
+
+            if (toDate != null
+                    && (date == null || date.isAfter(toDate))) {
+                continue;
+            }
+
+            if (!selectedModel.isEmpty()
+                    && !selectedModel.equalsIgnoreCase(
+                            record.getModel() == null
+                                    ? ""
+                                    : record.getModel().trim())) {
+                continue;
+            }
+
+            result.add(record);
+        }
+
+        return result;
+    }
+
+    private LocalDate parseDate(String value) {
+
+        if (value == null || value.trim().isEmpty()) {
+            return null;
+        }
+
+        try {
+            return LocalDate.parse(value.trim());
+        } catch (Exception e) {
+            throw new IllegalArgumentException(
+                    "Invalid date filter. Use YYYY-MM-DD.");
         }
     }
 

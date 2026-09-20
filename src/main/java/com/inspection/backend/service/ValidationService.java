@@ -154,6 +154,23 @@ public class ValidationService {
                 errors.add(
                     "Inspection Status must be OK or NG."
                 );
+            } else {
+
+                int ng = record.getNgQuantity() == null
+                        ? 0
+                        : record.getNgQuantity();
+
+                if (ng > 0 && !status.equals("NG")) {
+                    errors.add(
+                        "Inspection Status must be NG when NG Quantity is greater than 0."
+                    );
+                }
+
+                if (ng == 0 && !status.equals("OK")) {
+                    errors.add(
+                        "Inspection Status must be OK when NG Quantity is 0."
+                    );
+                }
             }
         }
 

@@ -313,6 +313,7 @@ public class ExcelService {
                 .replace("\u200B", "")
                 .replace("\uFEFF", "")
                 .replaceAll("[\\p{Z}\\s]+", " ")
+                .replaceAll("\\s*/\\s*", "/")
                 .trim()
                 .toLowerCase();
     }

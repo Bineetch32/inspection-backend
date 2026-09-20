@@ -19,11 +19,19 @@ public class InspectionRecordService {
 
     public void saveAll(List<InspectionRecord> records) {
 
-        List<InspectionRecordEntity> entities = records.stream()
-                .map(this::toEntity)
-                .toList();
+        for (InspectionRecord record : records) {
 
-        repository.saveAll(entities);
+            boolean alreadySaved =
+                    repository.existsByInspectionDateAndPartNoAndSheetNameAndExcelRowNumber(
+                            record.getInspectionDate(),
+                            record.getPartNo(),
+                            record.getSheetName(),
+                            record.getExcelRowNumber());
+
+            if (!alreadySaved) {
+                repository.save(toEntity(record));
+            }
+        }
     }
 
     public List<InspectionRecordEntity> getAll() {

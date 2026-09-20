@@ -1,7 +1,12 @@
+
 package com.inspection.backend.controller;
 
 import java.util.List;
+import java.util.Map;
 
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -11,7 +16,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.inspection.backend.model.PartMaster;
 import com.inspection.backend.service.PartMasterService;
@@ -80,5 +87,49 @@ public class PartMasterController {
 
         partMasterService.deletePart(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping(value = "/import-excel",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> importExcel(
+            @RequestParam("file") MultipartFile file) {
+
+        try {
+            return ResponseEntity.ok(
+                    partMasterService.importExcel(file));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(
+                    Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(
+                    Map.of(
+                            "message",
+                            "Part Master Excel import failed: "
+                                    + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/template")
+    public ResponseEntity<byte[]> downloadTemplate() {
+
+        try {
+            byte[] file = partMasterService.createExcelTemplate();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(
+                    MediaType.parseMediaType(
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            headers.setContentDisposition(
+                    ContentDisposition.attachment()
+                            .filename("Part-Master-Template.xlsx")
+                            .build());
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(file);
+
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
 }

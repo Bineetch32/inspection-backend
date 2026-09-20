@@ -23,14 +23,13 @@ public class DataInitializer {
                 return;
             }
 
-            if (repository.findByUsernameIgnoreCase(username.trim()).isPresent()) {
-                return;
-            }
-
             BCryptPasswordEncoder encoder =
                     new BCryptPasswordEncoder();
 
-            AppUser admin = new AppUser();
+            AppUser admin = repository
+                    .findByUsernameIgnoreCase(username.trim())
+                    .orElseGet(AppUser::new);
+
             admin.setUsername(username.trim());
             admin.setPassword(encoder.encode(rawPassword));
             admin.setRole("ADMIN");

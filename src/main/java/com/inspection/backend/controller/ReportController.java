@@ -21,6 +21,7 @@ import com.inspection.backend.model.InspectionRecord;
 import com.inspection.backend.service.DuplicateInspectionService;
 import com.inspection.backend.service.ExcelService;
 import com.inspection.backend.service.PdfReportService;
+import com.inspection.backend.service.InspectionRecordService;
 import com.inspection.backend.service.ReportCalculationService;
 import com.inspection.backend.service.ValidationService;
 
@@ -33,19 +34,22 @@ public class ReportController {
     private final DuplicateInspectionService duplicateService;
     private final ReportCalculationService reportService;
     private final PdfReportService pdfReportService;
+    private final InspectionRecordService inspectionRecordService;
 
     public ReportController(
             ExcelService excelService,
             ValidationService validationService,
             DuplicateInspectionService duplicateService,
             ReportCalculationService reportService,
-            PdfReportService pdfReportService) {
+            PdfReportService pdfReportService,
+            InspectionRecordService inspectionRecordService) {
 
         this.excelService = excelService;
         this.validationService = validationService;
         this.duplicateService = duplicateService;
         this.reportService = reportService;
         this.pdfReportService = pdfReportService;
+        this.inspectionRecordService = inspectionRecordService;
     }
 
     @PostMapping("/calculate")
@@ -211,6 +215,8 @@ public class ReportController {
                 validationWarnings);
 
         if (!validRecords.isEmpty()) {
+
+            inspectionRecordService.saveAll(validRecords);
 
             Map<String, Object> report =
                     reportService.calculate(

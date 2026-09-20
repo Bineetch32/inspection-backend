@@ -1,5 +1,6 @@
 package com.inspection.backend.service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -36,6 +37,41 @@ public class InspectionRecordService {
 
     public List<InspectionRecordEntity> getAll() {
         return repository.findAll();
+    }
+
+    public List<InspectionRecord> getAllAsInspectionRecords() {
+
+        List<InspectionRecord> records = new ArrayList<>();
+
+        for (InspectionRecordEntity entity : repository.findAll()) {
+
+            InspectionRecord record = new InspectionRecord();
+
+            record.setSrNo(entity.getSrNo());
+            record.setInspectionDate(entity.getInspectionDate());
+            record.setPartNo(entity.getPartNo());
+            record.setPartName(entity.getPartName());
+            record.setVendorCode(entity.getVendorCode());
+            record.setVendorName(entity.getVendorName());
+            record.setModel(entity.getModel());
+            record.setQuantityChecked(entity.getQuantityChecked());
+            record.setOkQuantity(entity.getOkQuantity());
+            record.setNgQuantity(entity.getNgQuantity());
+            record.setInspectionStatus(entity.getInspectionStatus());
+            record.setDefectDescription(entity.getDefectDescription());
+            record.setDefectPhoto(entity.getDefectPhoto());
+            record.setPackagingStatus(entity.getPackagingStatus());
+            record.setPackagingPhoto(entity.getPackagingPhoto());
+            record.setCheckedBy(entity.getCheckedBy());
+            record.setVerifiedBy(entity.getVerifiedBy());
+            record.setRemarks(entity.getRemarks());
+            record.setSheetName(entity.getSheetName());
+            record.setExcelRowNumber(entity.getExcelRowNumber());
+
+            records.add(record);
+        }
+
+        return records;
     }
 
     private InspectionRecordEntity toEntity(InspectionRecord record) {

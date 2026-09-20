@@ -135,9 +135,15 @@ public class ReportController {
             byte[] pdf =
                     pdfReportService.generateReport(report);
 
-            emailService.sendReportEmail(
-                    pdf,
-                    "Inspection-Report.pdf");
+            try {
+                emailService.sendReportEmail(
+                        pdf,
+                        "Inspection-Report.pdf");
+            } catch (Exception emailException) {
+                System.err.println(
+                        "Inspection report email failed: "
+                        + emailException.getMessage());
+            }
 
             HttpHeaders headers = new HttpHeaders();
 

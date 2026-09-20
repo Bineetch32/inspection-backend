@@ -354,9 +354,7 @@ public class ReportController {
                 new LinkedHashMap<>();
 
         boolean reportAllowed =
-                !validRecords.isEmpty()
-                && validationWarnings.isEmpty()
-                && duplicateWarnings.isEmpty();
+                !validRecords.isEmpty();
 
         response.put(
                 "reportGenerationAllowed",

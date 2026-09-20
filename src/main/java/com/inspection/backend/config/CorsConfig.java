@@ -16,21 +16,21 @@ public class CorsConfig {
 
         CorsConfiguration config = new CorsConfiguration();
 
-        config.setAllowedOrigins(List.of(
-                "https://inspection-frontend-live-production.up.railway.app",
-                "https://inspection-frontend-production.up.railway.app",
-                "http://localhost:4200"
-        ));
+        // This application is currently a browser-based internal tool.
+        // Allow the frontend to call the backend from any origin.
+        // Credentials are not used; login is handled by the application itself.
+        config.addAllowedOriginPattern("*");
 
         config.setAllowedMethods(List.of(
                 "GET",
                 "POST",
                 "PUT",
                 "DELETE",
-                "OPTIONS"
+                "OPTIONS",
+                "PATCH"
         ));
 
-        config.setAllowedHeaders(List.of("*"));
+        config.addAllowedHeader("*");
         config.setAllowCredentials(false);
         config.setMaxAge(3600L);
 
